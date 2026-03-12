@@ -12,6 +12,22 @@ import shutil
 
 def check_dependencies():
     """检查必要的依赖是否已安装"""
+    import os
+
+    # 检查 GitHub Token 环境变量
+    gh_token = os.environ.get("GH_TOKEN")
+
+    if gh_token:
+        print("✓ GH_TOKEN environment variable is set")
+    else:
+        print("⚠️  Warning: GH_TOKEN environment variable is not set", file=sys.stderr)
+        print("   Please set GH_TOKEN environment variable:", file=sys.stderr)
+        print("   PowerShell: $env:GH_TOKEN = 'your_token'", file=sys.stderr)
+        print("   Bash: export GH_TOKEN='your_token'", file=sys.stderr)
+        print("   Get your token: https://github.com/settings/tokens", file=sys.stderr)
+        print("   Required scopes: repo, workflow", file=sys.stderr)
+        sys.exit(1)
+
     # 检查 git
     if not shutil.which("git"):
         print("❌ Error: Git is not installed.", file=sys.stderr)
@@ -30,23 +46,19 @@ def check_dependencies():
         sys.exit(1)
     print("✓ GitHub CLI is installed")
 
-    # 检查是否已登录 GitHub
-    result = subprocess.run(
-        ["gh", "auth", "status"],
-        capture_output=True,
-        text=True
-    )
-    if result.returncode != 0:
-        print("❌ Error: Not logged in to GitHub.", file=sys.stderr)
-        print("   Please run: gh auth login", file=sys.stderr)
-        sys.exit(1)
-    print("✓ Logged in to GitHub")
-
 
 def run_gh_command(args):
     """执行gh命令并返回结果"""
+    import os
+
     cmd = ["gh"] + args
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    env = os.environ.copy()
+
+    # 确保使用 GH_TOKEN 环境变量
+    if "GH_TOKEN" in env:
+        env["GH_TOKEN"] = env["GH_TOKEN"]
+
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
 
     if result.returncode != 0:
         print(f"Error: {result.stderr}", file=sys.stderr)

@@ -31,19 +31,56 @@ winget install --id GitHub.cli
 # https://cli.github.com/
 ```
 
-### 3. 登录 GitHub
+### 3. 配置 GitHub 认证
 
-```bash
-gh auth login
+本技能使用 **GitHub Personal Access Token** 进行认证，推荐使用环境变量方式。
+
+#### 获取 GitHub Token
+
+1. 访问 https://github.com/settings/tokens
+2. 点击 "Generate new token (classic)"
+3. 勾选以下权限：
+   - `repo` - 完整仓库控制权限
+   - `workflow` - 工作流权限
+4. 点击 "Generate token"
+5. **复制生成的 token（只显示一次）**
+
+#### 设置环境变量
+
+**PowerShell:**
+```powershell
+# 临时设置（当前会话有效）
+$env:GH_TOKEN = "your_github_token_here"
+
+# 永久设置
+[System.Environment]::SetEnvironmentVariable('GH_TOKEN', 'your_github_token_here', 'User')
 ```
 
-按照提示选择：
-- GitHub.com
-- HTTPS
-- Yes (上传 SSH keys)
-- Login with a web browser
+**Git Bash / Bash:**
+```bash
+# 临时设置（当前会话有效）
+export GH_TOKEN="your_github_token_here"
 
-然后在浏览器中授权登录。
+# 永久设置（添加到 ~/.bashrc 或 ~/.zshrc）
+echo 'export GH_TOKEN="your_github_token_here"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**CMD:**
+```cmd
+# 临时设置（当前会话有效）
+set GH_TOKEN=your_github_token_here
+```
+
+#### 验证环境变量
+
+```powershell
+# PowerShell
+echo $env:GH_TOKEN
+
+# Bash
+echo $GH_TOKEN
+```
 
 ## 功能特性
 
@@ -192,11 +229,21 @@ python scripts/pr.py --merge --repo "owner/repo" --number 123 --merge-method reb
 ### Q: 提示 "GitHub CLI (gh) is not installed"
 A: 运行 `winget install --id GitHub.cli` 安装 GitHub CLI
 
-### Q: 提示 "Not logged in to GitHub"
-A: 运行 `gh auth login` 进行登录授权
+### Q: 提示 "GH_TOKEN environment variable is not set"
+A: 请设置 `GH_TOKEN` 环境变量：
+```powershell
+# PowerShell
+$env:GH_TOKEN = "your_github_token_here"
+```
 
 ### Q: 提示 "Git is not installed"
 A: 运行 `winget install --id Git.Git` 安装 Git
+
+### Q: 如何获取 GitHub Token？
+A: 访问 https://github.com/settings/tokens，生成新的 Personal Access Token，需要勾选 `repo` 和 `workflow` 权限。
+
+### Q: Token 失效了怎么办？
+A: 重新生成一个新的 Token，并更新 `GH_TOKEN` 环境变量
 
 ### Q: 合并 PR 时提示权限不足
 A: 请确保你有该仓库的写权限和合并权限
