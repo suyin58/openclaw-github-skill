@@ -8,11 +8,28 @@ import json
 import argparse
 import sys
 import shutil
+import os
+from pathlib import Path
+
+
+def load_env_from_file():
+    """从.env文件加载环境变量"""
+    env_file = Path(__file__).parent.parent / '.env'
+    if env_file.exists():
+        with open(env_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key.strip()] = value.strip().strip('"').strip("'")
 
 
 def check_dependencies():
     """检查必要的依赖是否已安装"""
     import os
+
+    # 先尝试从.env文件加载
+    load_env_from_file()
 
     # 检查 GitHub Token 环境变量
     gh_token = os.environ.get("GH_TOKEN")
