@@ -18,9 +18,9 @@ def check_dependencies():
     gh_token = os.environ.get("GH_TOKEN")
 
     if gh_token:
-        print("✓ GH_TOKEN environment variable is set")
+        print("[OK] GH_TOKEN environment variable is set")
     else:
-        print("⚠️  Warning: GH_TOKEN environment variable is not set", file=sys.stderr)
+        print("[ERROR] GH_TOKEN environment variable is not set", file=sys.stderr)
         print("   Please set GH_TOKEN environment variable:", file=sys.stderr)
         print("   PowerShell: $env:GH_TOKEN = 'your_token'", file=sys.stderr)
         print("   Bash: export GH_TOKEN='your_token'", file=sys.stderr)
@@ -30,35 +30,59 @@ def check_dependencies():
 
     # 检查 git
     if not shutil.which("git"):
-        print("❌ Error: Git is not installed.", file=sys.stderr)
+        print("[ERROR] Git is not installed.", file=sys.stderr)
         print("   Please install Git first:", file=sys.stderr)
         print("   Windows: https://git-scm.com/download/win", file=sys.stderr)
         print("   Or use: winget install --id Git.Git", file=sys.stderr)
         sys.exit(1)
-    print("✓ Git is installed")
+    print("[OK] Git is installed")
 
-    # 检查 gh CLI
-    if not shutil.which("gh"):
-        print("❌ Error: GitHub CLI (gh) is not installed.", file=sys.stderr)
+    # 检查 gh CLI（支持在 PATH 中或常见安装位置）
+    gh_path = shutil.which("gh")
+    if not gh_path:
+        # 尝试常见安装位置
+        common_paths = [
+            "C:/Program Files/GitHub CLI/gh.exe",
+            "C:/Program Files (x86)/GitHub CLI/gh.exe",
+        ]
+        for path in common_paths:
+            if os.path.exists(path):
+                gh_path = path
+                os.environ["GH_PATH"] = path
+                break
+
+    if not gh_path:
+        print("[ERROR] GitHub CLI (gh) is not installed.", file=sys.stderr)
         print("   Please install GitHub CLI first:", file=sys.stderr)
         print("   Windows: winget install --id GitHub.cli", file=sys.stderr)
         print("   Or visit: https://cli.github.com/", file=sys.stderr)
         sys.exit(1)
-    print("✓ GitHub CLI is installed")
+    print("[OK] GitHub CLI is installed")
 
 
 def run_gh_command(args):
     """执行gh命令并返回结果"""
     import os
 
-    cmd = ["gh"] + args
+    # 使用找到的 gh 路径或默认的 "gh"
+    gh_path = os.environ.get("GH_PATH", "gh")
+
+    cmd = [gh_path] + args
     env = os.environ.copy()
 
     # 确保使用 GH_TOKEN 环境变量
     if "GH_TOKEN" in env:
         env["GH_TOKEN"] = env["GH_TOKEN"]
 
-    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    # 使用 encoding='utf-8' 和 errors='ignore' 来处理编码问题
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        encoding='utf-8',
+        errors='ignore',
+        env=env
+    )
 
     if result.returncode != 0:
         print(f"Error: {result.stderr}", file=sys.stderr)
